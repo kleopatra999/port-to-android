@@ -1,0 +1,17 @@
+android-?
+android-1?
+android-20
+arch-mips
+arch-x86
+arch-mips64
+arch-x86_64
+arch-arm64
+mips*
+aarch*
+toolchains/x86*
+libs/x86_64
+libs/x86
+libs/arm64-*
+frameworks/x86_64
+frameworks/x86
+frameworks/arm64-*
