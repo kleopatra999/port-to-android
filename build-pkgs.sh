@@ -45,7 +45,9 @@ export PKG_CONFIG_PATH=${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconf
 export PKG_CONFIG=${TOOLCHAIN_NAME}-pkg-config
 
 libxml2_build() {
+    local patch=$PWD/patches/libxml2.sh
     pushd $libxml2_PATH
+    test -e $patch && $patch
     test -e configure ||
         autoreconf -vi
     test -e Makefile ||
