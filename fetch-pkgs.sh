@@ -1,9 +1,15 @@
 #!/bin/bash
 set -e # Exit immediately if a command exits with a non-zero status.
 set -u # Treat unset variables as an error when substituting.
-set -x # Print commands and their arguments as they are executed.
+#set -x # Print commands and their arguments as they are executed.
 
-DRY=${DRY:+echo}
+RUN=${SILENT:-run}
+test ${DRY:-} && RUN=echo
+
+run() {
+    echo "$@" >&2
+    "$@"
+}
 
 . pkgs.sh
 
@@ -15,15 +21,17 @@ fetch-pkg() {
     pkg_GIT=${!pkg_GIT}
     pkg_TAR=${pkg}_TAR
     pkg_TAR=${!pkg_TAR}
-    test $pkg_GIT &&
-        git_clone ${pkg}_GIT_CLONE $pkg_PATH
-    test $pkg_TAR &&
-        wget_tar $pkg_TAR $pkg_PATH
+    if test -e ${!pkg_PATH}
+    then printf "%-16s exists\n" $pkg
+    elif test $pkg_GIT
+    then git_clone ${pkg}_GIT_CLONE $pkg_PATH
+    elif test $pkg_TAR
+    then wget_tar $pkg_TAR $pkg_PATH
+    fi
 }
 
 git_clone() {
-    test -e ${!2} ||
-        $DRY git clone ${!1}
+    $RUN git clone ${!1}
 }
 
 wget_tar() {
@@ -33,9 +41,8 @@ wget_tar() {
         xz)     zip=--xz    ;;
         bz2)    zip=--bzip2 ;;
     esac
-    test -e ${!2} ||
-        $DRY wget -O - $url |
-        $DRY tar -x $zip -C $dir
+    $RUN wget -O - $url |
+        $RUN tar -x $zip -C $dir
 }
 
 main() {

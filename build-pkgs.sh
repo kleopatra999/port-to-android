@@ -8,22 +8,24 @@ HOST=arm-linux-androideabi
 VERBOSE=${VERBOSE:-}
 if test -n "$VERBOSE"
 then
-    SILENT_RULES="V=1" # verbose make output
-    CONFIGURE_QUIET=
-    CMAKE_MAKE_VERBOSE="VERBOSE=1"
+    VERBOSE_CONFIGURE=
+    VERBOSE_CMAKE_MAKE="VERBOSE=1"
+    VERBOSE_AUTORECONF="--verbose"
+    VERBOSE_AUTOCONF_MAKE="V=1"
 else
-    SILENT_RULES="V=" # silent make output
-    CONFIGURE_QUIET="--quiet"
-    CMAKE_MAKE_VERBOSE="VERBOSE="
+    VERBOSE_CONFIGURE="--quiet"
+    VERBOSE_CMAKE_MAKE="VERBOSE="
+    VERBOSE_AUTORECONF=""
+    VERBOSE_AUTOCONF_MAKE="V=0"
 fi
 
 
 cpus() {
     local cpus=1
     local os=`uname -s`
-    if test $os -e Linux
+    if test $os = Linux
     then cpus=`grep -c ^processor /proc/cpuinfo`
-    elif test $os -e Darwin # Assume Mac OS X
+    elif test $os = Darwin # Assume Mac OS X
     then cpus=`system_profiler | awk '/Number Of CPUs/{print $4}{next;}'`
     fi
     echo $cpus
@@ -49,6 +51,7 @@ SOURCES="./$CRYSTAX_NAME/sources"
 INSTALL_DIR="$PWD/toolchain-$PLATFORM-$ABI-$COMPILER"
 SYSROOT="$INSTALL_DIR/sysroot"
 DESTDIR="$SYSROOT"
+PREFIX="/usr"
 CC="$INSTALL_DIR/bin/$TOOLCHAIN_NAME-gcc"
 
 MAKE="${MAKE:-make}"
@@ -56,9 +59,9 @@ NDK_BUILD="${NDK_BUILD:-ndk-build -j$JOBS}"
 
 PATH=$SYSROOT/../bin:$PATH
 
-export PKG_CONFIG_SYSROOT_DIR=${SYSROOT}
-export PKG_CONFIG_PATH=${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig:${SYSROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/
-export PKG_CONFIG=${TOOLCHAIN_NAME}-pkg-config
+export PKG_CONFIG_SYSROOT_DIR="${SYSROOT}"
+export PKG_CONFIG_LIBDIR="${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig"
+export PKG_CONFIG=pkg-config
 
 libxml2_build() {
     local patch=$PWD/patches/libxml2.sh
@@ -68,10 +71,11 @@ libxml2_build() {
         autoreconf -vi
     test -e Makefile ||
         ./configure \
-            $CONFIGURE_QUIET \
+            $VERBOSE_CONFIGURE \
             --host=$HOST \
+            --prefix=$PREFIX \
             "${libxml2_CONFIGURE[@]}"
-    $MAKE $SILENT_RULES
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
     $MAKE install DESTDIR=$DESTDIR
     popd    
 }
@@ -90,27 +94,103 @@ libavg_build() {
         -DCMAKE_TOOLCHAIN_FILE=Android.cmake \
         -DCMAKE_SYSROOT=$SYSROOT \
         -DCMAKE_C_COMPILER=$CC \
+        -DCMAKE_PREFIX_PATH=$PREFIX \
         .
-    $MAKE $CMAKE_MAKE_VERBOSE -j -l$JOBS
+    $MAKE $VERBOSE_CMAKE_MAKE -j -l$JOBS
     $MAKE install DESTDIR=$DESTDIR
     popd
 }
 
 libSDL2_build() {
     pushd $libSDL2_PATH
-    PKG_CONFIG_LIBDIR="${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig" \
-    PKG_CONFIG_SYSROOT_DIR="$SYSROOT" \
     ./configure \
-        $CONFIGURE_QUIET \
-        --host=$HOST
-    $MAKE $SILENT_RULES -j$JOBS
+        $VERBOSE_CONFIGURE \
+        --host=$HOST \
+        --prefix=$PREFIX
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
     $MAKE install DESTDIR="$DESTDIR"
     popd
 }
 
+gdk_pixbuf_build() {
+    set -x
+    pushd $gdk_pixbuf_PATH
+    #autoreconf --force --install $VERBOSE_AUTORECONF
+    ./configure \
+        $VERBOSE_CONFIGURE \
+        --host=$HOST \
+        --prefix=$PREFIX \
+        --disable-shared --with-included-loaders
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
+    $MAKE install DESTDIR="$DESTDIR"
+    popd
+}
+
+glib_build() {
+    set -x
+    local name=glib
+    local path=${name}_PATH
+    pushd "${!path}"
+    touch gtk-doc.make
+    test -e ./configure ||
+        AUTOMAKE="${AUTOMAKE:-automake} --foreign" \
+        autoreconf --install -Wnone $VERBOSE_AUTORECONF
+    ./configure \
+        $VERBOSE_CONFIGURE \
+        --host=$HOST \
+        --prefix=$PREFIX \
+        -C --disable-shared --enable-static 
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
+    $MAKE install DESTDIR="$DESTDIR"
+    popd
+}
+
+gettext_build() {
+    set -x
+    local name=gettext
+    local path=${name}_PATH
+    pushd "${!path}"
+    #./autogen.sh
+    #touch gtk-doc.make
+    #AUTOMAKE="${AUTOMAKE:-automake} --foreign" \
+    #autoreconf --install -Wnone $VERBOSE_AUTORECONF
+    ./configure \
+        $VERBOSE_CONFIGURE \
+        --host=$HOST \
+        --prefix=$PREFIX \
+        --disable-shared --with-included-gettext --disable-csharp  --disable-libasprintf -C --disable-acl --disable-java --disable-threads
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
+    $MAKE install DESTDIR="$DESTDIR"
+    popd
+}
+
+crystax_tests_build() {
+    local name=crystax_tests
+    local path=${name}_PATH
+    pushd "${!path}"
+    rm -rf CMakeCache.txt CMakeFiles/
+    cmake \
+        -DCMAKE_SYSTEM_NAME=Android \
+        -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
+        -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
+        -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
+        -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY \
+        -DCMAKE_SYSROOT=$SYSROOT \
+        -DCMAKE_C_COMPILER=$CC \
+        -DCMAKE_PREFIX_PATH=$PREFIX \
+        .
+    $MAKE $VERBOSE_CMAKE_MAKE -j -l$JOBS
+    #$MAKE install DESTDIR=$DESTDIR
+    popd
+}
+
 main() {
-    #libxml2_build
-    #libSDL2_build
+    crystax_tests_build
+    libxml2_build
+    libSDL2_build
+    gettext_build
+    glib_build
+    gdk_pixbuf_build
     libavg_build
 }
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PKGS=("libavg" "libxml2" "libSDL2")
+PKGS=("crystax_tests" "libavg" "libxml2" "libSDL2" "gettext" "glib" "gdk_pixbuf")
 PKGS_PATH="modules"
 
 libavg_GIT="git@github.com:payload/libavg.git"
@@ -25,3 +25,42 @@ libxml2_CONFIGURE=(
 libSDL2_TAR="https://libsdl.org/release/SDL2-2.0.4.tar.gz"
 libSDL2_PATH="$PKGS_PATH/SDL2-2.0.4"
 libSDL2_CONFIGURE=()
+
+basestname() {
+    local name=`basename "$1"`
+    echo ${name%%.*}
+}
+
+define_git() {
+    local path="$PKGS_PATH"/`basestname "$2"`
+    local gitclone="--depth 1 --branch $3 ""$2"" ""$path"
+    declare -g \
+        ${1}_GIT="$2" \
+        ${1}_PATH="$path" \
+        ${1}_GIT_CLONE="$gitclone"
+}
+
+define_tar() {
+    local path="${3:-"$PKGS_PATH"/`basestname "$2"`}"
+    declare -g \
+        ${1}_TAR="$2" \
+        ${1}_PATH="$path"
+}
+
+# TODO payload
+# gettext need gperf
+# gettext needs s/-lpthread//
+#   but pthread_* is implemented in libcrystax.so
+define_tar gettext \
+    "http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz" \
+    "$PKGS_PATH/gettext-0.18.1.1"
+
+define_git crystax_tests "crystax-tests" master
+
+glib_GIT="https://github.com/GNOME/glib.git"
+glib_PATH="$PKGS_PATH/glib"
+glib_GIT_CLONE="--depth 1 --branch 2.29.2 $glib_GIT $glib_PATH"
+
+gdk_pixbuf_GIT="https://github.com/payload/gdk-pixbuf.git"
+gdk_pixbuf_PATH="$PKGS_PATH/gdk-pixbuf"
+gdk_pixbuf_GIT_CLONE="--depth 1 --branch libavg $gdk_pixbuf_GIT $gdk_pixbuf_PATH"
