@@ -4,7 +4,9 @@ set -u # Treat unset variables as an error when substituting.
 #set -x # Print commands and their arguments as they are executed.
 shopt -s extglob
 
-HOST=arm-linux-androideabi
+. preambel.sh
+. pkgs.sh
+
 VERBOSE=${VERBOSE:-}
 if test -n "$VERBOSE"
 then
@@ -18,50 +20,6 @@ else
     VERBOSE_AUTORECONF=""
     VERBOSE_AUTOCONF_MAKE="V=0"
 fi
-
-
-cpus() {
-    local cpus=1
-    local os=`uname -s`
-    if test $os = Linux
-    then cpus=`grep -c ^processor /proc/cpuinfo`
-    elif test $os = Darwin # Assume Mac OS X
-    then cpus=`system_profiler | awk '/Number Of CPUs/{print $4}{next;}'`
-    fi
-    echo $cpus
-}
-JOBS=${JOBS:-`cpus`}
-
-. pkgs.sh
-
-VERSION="${VERSION:-10.3.1}"
-BUILD="${BUILD:-linux-x86_64}"
-
-PLATFORM="${PLATFORM:-android-21}"
-ABI="${ABI:-armeabi}"
-COMPILER="${COMPILER:-gnu-4.9}"
-TOOLCHAIN_NAME="${TOOLCHAIN_NAME:-arm-linux-androideabi}"
-TOOLCHAIN="${TOOLCHAIN:-${TOOLCHAIN_NAME}-4.9}"
-
-URL="https://www.crystax.net/download/crystax-ndk-$VERSION-$BUILD.tar.xz"
-TAR_NAME="`basename "$URL"`"
-CRYSTAX_NAME="crystax-ndk-$VERSION"
-SOURCES="./$CRYSTAX_NAME/sources"
-
-INSTALL_DIR="$PWD/toolchain-$PLATFORM-$ABI-$COMPILER"
-SYSROOT="$INSTALL_DIR/sysroot"
-DESTDIR="$SYSROOT"
-PREFIX="/usr"
-CC="$INSTALL_DIR/bin/$TOOLCHAIN_NAME-gcc"
-
-MAKE="${MAKE:-make}"
-NDK_BUILD="${NDK_BUILD:-ndk-build -j$JOBS}"
-
-PATH=$SYSROOT/../bin:$PATH
-
-export PKG_CONFIG_SYSROOT_DIR="${SYSROOT}"
-export PKG_CONFIG_LIBDIR="${SYSROOT}/usr/lib/pkgconfig:${SYSROOT}/usr/share/pkgconfig"
-export PKG_CONFIG=pkg-config
 
 libxml2_build() {
     local patch=$PWD/patches/libxml2.sh

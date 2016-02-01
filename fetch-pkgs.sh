@@ -3,14 +3,7 @@ set -e # Exit immediately if a command exits with a non-zero status.
 set -u # Treat unset variables as an error when substituting.
 #set -x # Print commands and their arguments as they are executed.
 
-RUN=${SILENT:-run}
-test ${DRY:-} && RUN=echo
-
-run() {
-    echo "$@" >&2
-    "$@"
-}
-
+. preambel.sh
 . pkgs.sh
 
 fetch-pkg() {

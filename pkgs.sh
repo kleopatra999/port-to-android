@@ -3,6 +3,22 @@
 PKGS=("crystax_tests" "libavg" "libxml2" "libSDL2" "gettext" "glib" "gdk_pixbuf")
 PKGS_PATH="modules"
 
+define_git() {
+    local path="$PKGS_PATH"/`basestname "$2"`
+    local gitclone="--depth 1 --branch $3 ""$2"" ""$path"
+    declare -g \
+        ${1}_GIT="$2" \
+        ${1}_PATH="$path" \
+        ${1}_GIT_CLONE="$gitclone"
+}
+
+define_tar() {
+    local path="${3:-"$PKGS_PATH"/`basestname "$2"`}"
+    declare -g \
+        ${1}_TAR="$2" \
+        ${1}_PATH="$path"
+}
+
 libavg_GIT="git@github.com:payload/libavg.git"
 # libavg_GIT="https://github.com/libavg/libavg.git"
 libavg_PATH="$PKGS_PATH/libavg"
@@ -25,27 +41,6 @@ libxml2_CONFIGURE=(
 libSDL2_TAR="https://libsdl.org/release/SDL2-2.0.4.tar.gz"
 libSDL2_PATH="$PKGS_PATH/SDL2-2.0.4"
 libSDL2_CONFIGURE=()
-
-basestname() {
-    local name=`basename "$1"`
-    echo ${name%%.*}
-}
-
-define_git() {
-    local path="$PKGS_PATH"/`basestname "$2"`
-    local gitclone="--depth 1 --branch $3 ""$2"" ""$path"
-    declare -g \
-        ${1}_GIT="$2" \
-        ${1}_PATH="$path" \
-        ${1}_GIT_CLONE="$gitclone"
-}
-
-define_tar() {
-    local path="${3:-"$PKGS_PATH"/`basestname "$2"`}"
-    declare -g \
-        ${1}_TAR="$2" \
-        ${1}_PATH="$path"
-}
 
 # TODO payload
 # gettext need gperf

@@ -3,40 +3,27 @@ set -e # Exit immediately if a command exits with a non-zero status.
 set -u # Treat unset variables as an error when substituting.
 #set -x # Print commands and their arguments as they are executed.
 
-VERSION="${VERSION:-10.3.1}"
-BUILD="${BUILD:-linux-x86_64}"
-
-PLATFORM="${PLATFORM:-android-21}"
-ABI="${ABI:-armeabi}"
-COMPILER="${COMPILER:-gnu-4.9}"
-TOOLCHAIN="${TOOLCHAIN:-arm-linux-androideabi-4.9}"
-
-URL="https://www.crystax.net/download/crystax-ndk-$VERSION-$BUILD.tar.xz"
-TAR_NAME="`basename "$URL"`"
-CRYSTAX_NAME="crystax-ndk-$VERSION"
-SOURCES="./$CRYSTAX_NAME/sources"
-
-INSTALL_DIR="$PWD/toolchain-$PLATFORM-$ABI-$COMPILER"
-SYSROOT="$INSTALL_DIR/sysroot"
-PREFIX="$SYSROOT/usr"
-
-WGET=${WGET:-wget}
-TAR=${TAR:-tar}
-CP=${CP:-ln -r}
+. preambel.sh
 
 main() {
-    echo "Edit this file for changes in version, platform, directories, etc."
+    echo "Edit ./preambel.sh for changes in version, platform, directories, etc."
     echo
     test -e "$TAR_NAME" ||
-        $WGET "$URL" "$TAR_NAME"
+        $RUN $WGET "$URL" "$TAR_NAME"
     test -e "$CRYSTAX_NAME" ||
-        $TAR -Xcrystax.tar-exclude -x -a -v -f "$TAR_NAME"
+        $RUN $TAR -Xcrystax.tar-exclude -x -a -v -f "$TAR_NAME"
     test -e "$INSTALL_DIR" ||
         make_standalone_toolchain
-    copy_boost 1.59.0
-    copy_python 2.7
-    copy_python 3.5
-    copy_icu 56.1
+    for v in $BOOST_VERSIONS
+    do copy_boost $v
+    done
+    for v in $PYTHON_VERSIONS
+    do copy_python $v
+    done
+    for v in $ICU_VERSIONS
+    do copy_icu $v
+    done
+    echo "toolchain exists in $INSTALL_DIR"
 }
 
 make_standalone_toolchain() {
@@ -48,7 +35,7 @@ make_standalone_toolchain() {
   # --stl=<name>             Specify C++ STL [gnustl]
   # --arch=<name>            Specify target architecture
   # --abis=<list>            Specify list of target ABIs.
-  # --ndk-dir=<path>         Take source files from NDK at <path> [./crystax-ndk-$VERSION]
+  # --ndk-dir=<path>         Take source files from NDK at <path> [./crystax-ndk-$CRYSTAX_VERSION]
   # --system=<name>          Specify host system [linux-x86_64]
   # --package-dir=<path>     Place package file in <path> [/tmp/ndk-payload]
   # --install-dir=<path>     Don't create package, install files to <path> instead.
@@ -61,24 +48,24 @@ make_standalone_toolchain() {
 
 copy_boost() {
     local version=$1
-    $CP -fs $SOURCES/boost/$version/include/* $PREFIX/include
-    $CP -fs $SOURCES/boost/$version/libs/$ABI/$COMPILER/* $PREFIX/lib
+    $CP -fs $SOURCES/boost/$version/include/* $SYSROOT$PREFIX/include
+    $CP -fs $SOURCES/boost/$version/libs/$ABI/$COMPILER/* $SYSROOT$PREFIX/lib
 }
 
 copy_python() {
     local version=$1
-    mkdir -p $PREFIX/lib/python$version/
-    $CP -fs $SOURCES/python/$version/include/* $PREFIX/include
-    $CP -fs $SOURCES/python/$version/libs/$ABI/*.so $PREFIX/lib
+    mkdir -p $SYSROOT$PREFIX/lib/python$version/
+    $CP -fs $SOURCES/python/$version/include/* $SYSROOT$PREFIX/include
+    $CP -fs $SOURCES/python/$version/libs/$ABI/*.so $SYSROOT$PREFIX/lib
     $CP -fs \
         $SOURCES/python/$version/libs/$ABI/{modules,site-packags,stdlib.zip} \
-        $PREFIX/lib/python$version/
+        $SYSROOT$PREFIX/lib/python$version/
 }
 
 copy_icu() {
     local version=$1
-    $CP -fs $SOURCES/icu/$version/include/* $PREFIX/include
-    $CP -fs $SOURCES/icu/$version/libs/$ABI/* $PREFIX/lib
+    $CP -fs $SOURCES/icu/$version/include/* $SYSROOT$PREFIX/include
+    $CP -fs $SOURCES/icu/$version/libs/$ABI/* $SYSROOT$PREFIX/lib
 }
 
 main "${@:1}"
