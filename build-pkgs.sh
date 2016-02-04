@@ -122,34 +122,17 @@ gettext_build() {
     popd
 }
 
-crystax_tests_build() {
-    local name=crystax_tests
-    local path=${name}_PATH
-    pushd "${!path}"
-    rm -rf CMakeCache.txt CMakeFiles/
-    cmake \
-        -DCMAKE_SYSTEM_NAME=Android \
-        -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER \
-        -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY \
-        -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY \
-        -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY \
-        -DCMAKE_SYSROOT=$SYSROOT \
-        -DCMAKE_C_COMPILER=$CC \
-        -DCMAKE_PREFIX_PATH=$PREFIX \
-        .
-    $MAKE $VERBOSE_CMAKE_MAKE -j -l$JOBS
-    #$MAKE install DESTDIR=$DESTDIR
-    popd
+build() {
+    ${1}_build |& tee ${1}_build.log
 }
 
 main() {
-    crystax_tests_build
-    libxml2_build
-    libSDL2_build
-    gettext_build
-    glib_build
-    gdk_pixbuf_build
-    libavg_build
+    #build libxml2
+    #build libSDL2
+    #build gettext
+    build glib
+    #build gdk_pixbuf
+    #build libavg
 }
 
 main "${@:1}"

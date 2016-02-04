@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PKGS=("crystax_tests" "libavg" "libxml2" "libSDL2" "gettext" "glib" "gdk_pixbuf")
+PKGS=("libavg" "libxml2" "libSDL2" "gettext" "glib" "gdk_pixbuf")
 PKGS_PATH="modules"
 
 define_git() {
@@ -49,8 +49,6 @@ libSDL2_CONFIGURE=()
 define_tar gettext \
     "http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz" \
     "$PKGS_PATH/gettext-0.18.1.1"
-
-define_git crystax_tests "crystax-tests" master
 
 glib_GIT="https://github.com/GNOME/glib.git"
 glib_PATH="$PKGS_PATH/glib"
