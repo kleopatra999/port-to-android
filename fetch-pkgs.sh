@@ -10,16 +10,21 @@ fetch-pkg() {
     set +ue
     local pkg=${1}
     pkg_PATH=${pkg}_PATH
+    pkg_PATH=${!pkg_PATH}
     pkg_GIT=${pkg}_GIT
     pkg_GIT=${!pkg_GIT}
     pkg_TAR=${pkg}_TAR
     pkg_TAR=${!pkg_TAR}
-    if test -e ${!pkg_PATH}
+    pkg_DEB=${pkg}_DEB
+    pkg_DEB=${!pkg_DEB}
+    if test -e $pkg_PATH
     then printf "%-16s exists\n" $pkg
     elif test $pkg_GIT
-    then git_clone ${pkg}_GIT_CLONE $pkg_PATH
+    then git_clone ${pkg}_GIT_CLONE
     elif test $pkg_TAR
     then wget_tar $pkg_TAR $pkg_PATH
+    elif test $pkg_DEB
+    then apt_get_source $pkg_DEB $pkg_PATH
     fi
 }
 
@@ -28,7 +33,7 @@ git_clone() {
 }
 
 wget_tar() {
-    local zip url="$1" dir="`dirname ${!2}`"
+    local zip url="$1" dir="`dirname $2`"
     case ${url##*.} in
         gz)     zip=--gzip  ;;
         xz)     zip=--xz    ;;
@@ -36,6 +41,12 @@ wget_tar() {
     esac
     $RUN wget -O - $url |
         $RUN tar -x $zip -C $dir
+}
+
+apt_get_source() {
+    pushd `dirname $2`
+    $RUN apt-get source $1
+    popd
 }
 
 main() {

@@ -21,6 +21,7 @@ SYSROOT="$INSTALL_DIR/sysroot"
 DESTDIR="$SYSROOT"
 PREFIX="/usr"
 CC="$INSTALL_DIR/bin/$TOOLCHAIN_NAME-gcc"
+#export CFLAGS="${CFLAGS:-} -I=/usr/include/machine" # for cpu-features.h
 
 cpus() {
     local cpus=1
@@ -34,7 +35,7 @@ cpus() {
 }
 JOBS=${JOBS:-`cpus`}
 
-RUN=${SILENT:-run}
+test ! ${SILENT:-} && RUN=run
 test ${DRY:-} && RUN=echo
 
 MAKE="${MAKE:-make}"

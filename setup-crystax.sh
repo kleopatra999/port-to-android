@@ -23,6 +23,7 @@ main() {
     for v in $ICU_VERSIONS
     do copy_icu $v
     done
+    copy_stuff
     echo "toolchain exists in $INSTALL_DIR"
 }
 
@@ -66,6 +67,10 @@ copy_icu() {
     local version=$1
     $CP -fs $SOURCES/icu/$version/include/* $SYSROOT$PREFIX/include
     $CP -fs $SOURCES/icu/$version/libs/$ABI/* $SYSROOT$PREFIX/lib
+}
+
+copy_stuff() {
+    ln -s /bin/false $INSTALL_DIR/bin/freetype-config
 }
 
 main "${@:1}"
