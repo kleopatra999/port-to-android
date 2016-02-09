@@ -47,18 +47,25 @@ libxml2_clean() {
 
 libavg_build() {
     local pwd=$PWD
+    local cmds=${2:-configure|make|install}
     pushd $libavg_PATH
-    local configure=${libavg_CONFIGURE:-}
-    rm -rf CMakeCache.txt CMakeFiles/
-    cmake \
-        -DCMAKE_TOOLCHAIN_FILE=$pwd/Android.cmake \
-        -DCMAKE_SYSROOT=$SYSROOT \
-        -DCMAKE_C_COMPILER=$CC \
-        -DCMAKE_CXX_COMPILER=/home/payload/Code/android/cmake-android/toolchain-android-21-armeabi-gnu-4.9/bin/arm-linux-androideabi-g++ \
-        -DCMAKE_PREFIX_PATH=$PREFIX \
-        .
-    $MAKE $VERBOSE_CMAKE_MAKE -j -l$JOBS
-    $MAKE install DESTDIR=$DESTDIR
+    if [[ configure =~ $cmds ]]
+    then
+        rm -rf CMakeCache.txt CMakeFiles/
+        cmake \
+            -DCMAKE_TOOLCHAIN_FILE=$pwd/Android.cmake \
+            -DCMAKE_SYSROOT=$SYSROOT \
+            -DCMAKE_C_COMPILER=$CC \
+            -DCMAKE_CXX_COMPILER=/home/payload/Code/android/cmake-android/toolchain-android-21-armeabi-gnu-4.9/bin/arm-linux-androideabi-g++ \
+            -DCMAKE_PREFIX_PATH=$PREFIX \
+            .
+    fi
+    if [[ make =~ $cmds ]]
+    then $MAKE $VERBOSE_CMAKE_MAKE -j -l$JOBS
+    fi
+    if [[ install =~ $cmds ]]
+    then $MAKE install DESTDIR=$DESTDIR
+    fi
     popd
 }
 
@@ -269,13 +276,13 @@ pixman_build() {
 }
 
 build() {
-    ( ${1}_build |& tee ${1}_build.log ) || exit 1
+    ( ${1}_build $@ |& tee ${1}_build.log ) || exit 1
 }
 
 main() {
     set -ex
     if test ${1:-}
-    then build $1
+    then build $1 ${2:-}
     else
         build libxml2
         build libSDL2
