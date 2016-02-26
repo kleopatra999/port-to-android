@@ -8,10 +8,15 @@ set -u # Treat unset variables as an error when substituting.
 main() {
     echo "Edit ./preambel.sh for changes in version, platform, directories, etc."
     echo
+
+    local minimal_crystax="-Xcrystax.tar-exclude"
+    minimal_crystax=
+
     test -e "$TAR_NAME" ||
-        $RUN $WGET "$URL" "$TAR_NAME"
+        $RUN $WGET "$URL" -O "$TAR_NAME"
     test -e "$CRYSTAX_NAME" ||
-        $RUN $TAR -Xcrystax.tar-exclude -x -a -v -f "$TAR_NAME"
+        $RUN $TAR $minimal_crystax -x -a -f "$TAR_NAME" \
+            --checkpoint=1000 --totals
     test -e "$INSTALL_DIR" ||
         make_standalone_toolchain
     for v in $BOOST_VERSIONS
@@ -70,7 +75,7 @@ copy_icu() {
 }
 
 copy_stuff() {
-    ln -s /bin/false $INSTALL_DIR/bin/freetype-config
+    ln -sf /bin/false $INSTALL_DIR/bin/freetype-config
 }
 
 main "${@:1}"

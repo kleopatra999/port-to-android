@@ -21,6 +21,7 @@ SYSROOT="$INSTALL_DIR/sysroot"
 DESTDIR="$SYSROOT"
 PREFIX="/usr"
 CC="$INSTALL_DIR/bin/$TOOLCHAIN_NAME-gcc"
+CXX="$INSTALL_DIR/bin/$TOOLCHAIN_NAME-g++"
 #export CFLAGS="${CFLAGS:-} -I=/usr/include/machine" # for cpu-features.h
 
 cpus() {
@@ -58,4 +59,13 @@ run() {
 basestname() {
     local name=`basename "$1"`
     echo ${name%%.*}
+}
+
+basename_no_tar() {
+    local name=`basename "$1"`
+    name=${name%.gz}
+    name=${name%.bz2}
+    name=${name%.xz}
+    name=${name%.tar}
+    echo "$name"
 }

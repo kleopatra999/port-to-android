@@ -44,8 +44,14 @@ wget_tar() {
 }
 
 apt_get_source() {
-    pushd `dirname $2`
+    local tmp=`mktemp -d`
+    pushd $tmp
     $RUN apt-get source $1
+    rm *.dsc *.gz *.xz
+    mv $1* $1
+    popd
+    pushd `dirname $2`
+    mv $tmp/* .
     popd
 }
 

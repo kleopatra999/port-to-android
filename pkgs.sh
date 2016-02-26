@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# NOTE: a good quality source for sources is the Linux from Scratch project
+#       http://www.linuxfromscratch.org/lfs/view/development/index.html
+#       http://www.linuxfromscratch.org/blfs/view/svn/index.html
+
 PKGS=("libavg" "libxml2" "libSDL2" "gettext" "libffi" "libpcre" "glib"
 pixman cairo libpango "gdk_pixbuf")
 PKGS_PATH="modules"
@@ -14,7 +18,8 @@ define_git() { # name url branch path
 }
 
 define_tar() { # name url path
-    local path="${3:-"$PKGS_PATH"/`basestname "$2"`}"
+    # alternative: tar --list -a -f FILE | head -n1
+    local path="${3:-"$PKGS_PATH"/`basename_no_tar "$2"`}"
     declare -g \
         ${1}_TAR="$2" \
         ${1}_PATH="$path"
@@ -46,53 +51,19 @@ libxml2_CONFIGURE=(
     --without-lzma
 )
 
-libSDL2_TAR="https://libsdl.org/release/SDL2-2.0.4.tar.gz"
-libSDL2_PATH="$PKGS_PATH/SDL2-2.0.4"
-libSDL2_CONFIGURE=()
-
+define_tar libSDL2 "https://libsdl.org/release/SDL2-2.0.4.tar.gz"
 # TODO payload
 # gettext need gperf
 # gettext needs s/-lpthread//
 #   but pthread_* is implemented in libcrystax.so
-define_tar gettext \
-    "http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz" \
-    "$PKGS_PATH/gettext-0.18.1.1"
-define_tar libffi \
-    "ftp://sourceware.org/pub/libffi/libffi-3.2.1.tar.gz" \
-    "$PKGS_PATH/libffi-3.2.1"
-    
-true define_deb libpcre \
-    "pcre3" \
-    "$PKGS_PATH/pcre3-8.35"
-define_tar libpcre \
-    "ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.38.tar.bz2" \
-    "$PKGS_PATH/pcre-8.38"
-
-define_deb libpango \
-    "libpango-1.0-0" \
-    "$PKGS_PATH/pango1.0-1.36.8"
-
-
-true define_deb cairo \
-    "libcairo2" \
-    "$PKGS_PATH/cairo-1.14.2"
-# git://anonscm.debian.org/collab-maint/cairo.git    
-# git://anongit.freedesktop.org/git/cairo
-define_git cairo \
-    "git://anonscm.debian.org/collab-maint/cairo.git" \
-    "upstream/1.14.6" \
-    "$PKGS_PATH/cairo"
-
-
-define_deb pixman \
-    "libpixman-1-0" \
-    "$PKGS_PATH/pixman-0.32.6"
-define_deb glib \
-    "libglib2.0-0" \
-    "$PKGS_PATH/glib2.0-2.46.1"
-define_deb gdk_pixbuf \
-    "libgdk-pixbuf2.0-0" \
-    "$PKGS_PATH/gdk-pixbuf-2.32.1"
+define_tar gettext "http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz"
+define_tar libffi "ftp://sourceware.org/pub/libffi/libffi-3.2.1.tar.gz"
+define_tar libpcre "ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.38.tar.bz2"
+define_tar libpango "http://ftp.gnome.org/pub/gnome/sources/pango/1.38/pango-1.38.1.tar.xz"
+define_tar cairo "http://cairographics.org/releases/cairo-1.14.6.tar.xz"
+define_tar pixman "http://cairographics.org/releases/pixman-0.34.0.tar.gz"
+define_tar glib "http://ftp.gnome.org/pub/gnome/sources/glib/2.46/glib-2.46.2.tar.xz"
+define_tar gdk_pixbuf "http://ftp.gnome.org/pub/gnome/sources/gdk-pixbuf/2.30/gdk-pixbuf-2.30.7.tar.xz"
 
 
 #glib_GIT="https://github.com/GNOME/glib.git"

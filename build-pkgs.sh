@@ -56,7 +56,7 @@ libavg_build() {
             -DCMAKE_TOOLCHAIN_FILE=$pwd/Android.cmake \
             -DCMAKE_SYSROOT=$SYSROOT \
             -DCMAKE_C_COMPILER=$CC \
-            -DCMAKE_CXX_COMPILER=/home/payload/Code/android/cmake-android/toolchain-android-21-armeabi-gnu-4.9/bin/arm-linux-androideabi-g++ \
+            -DCMAKE_CXX_COMPILER=$CXX \
             -DCMAKE_PREFIX_PATH=$PREFIX \
             .
     fi
@@ -130,7 +130,8 @@ glib_build() {
         --with-sysroot=$SYSROOT \
         -C \
         --disable-shared
-    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS \
+        CFLAGS=-Dalloca # TODO this works around a possible bug in CrystaXs alloca.h
     $MAKE install DESTDIR="$DESTDIR"
     popd
 }
@@ -144,12 +145,18 @@ gettext_build() {
     #touch gtk-doc.make
     #AUTOMAKE="${AUTOMAKE:-automake} --foreign" \
     #autoreconf --install -Wnone $VERBOSE_AUTORECONF
+    ask "gperf installed" || ( echo "you can also put `ln -s /bin/true gperf` into PATH"; return 1 )
+    ask "patch" &&
+    find . -type f -exec sed -i s/-lpthread// '{}' ';'
+    ask "configure" &&
     ./configure \
         $VERBOSE_CONFIGURE \
         --host=$HOST \
         --prefix=$PREFIX \
         --disable-shared --with-included-gettext --disable-csharp  --disable-libasprintf -C --disable-acl --disable-java --disable-threads
-    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
+    ask "make" &&
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS 
+    ask "install" &&
     $MAKE install DESTDIR="$DESTDIR"
     popd
 }
@@ -275,12 +282,18 @@ pixman_build() {
     popd
 }
 
+ask() {
+    read -p "$1? [Yn] " && test -z $REPLY && return 0
+    return 1
+}
+
 build() {
-    ( ${1}_build $@ |& tee ${1}_build.log ) || exit 1
+    ask $1 &&
+    ( ${1}_build $@ |& tee ${1}_build.log ) || return 1
 }
 
 main() {
-    set -ex
+    set +e
     if test ${1:-}
     then build $1 ${2:-}
     else
@@ -297,7 +310,7 @@ main() {
         #build libpango
         build gdk_pixbuf
     
-        #build libavg
+        build libavg
     fi
 }
 
