@@ -51,18 +51,36 @@ libavg_build() {
     pushd $libavg_PATH
     if [[ configure =~ $cmds ]]
     then
-        rm -rf CMakeCache.txt CMakeFiles/
-        cmake \
-            -DCMAKE_TOOLCHAIN_FILE=$pwd/Android.cmake \
-            -DCMAKE_SYSROOT=$SYSROOT \
-            -DCMAKE_C_COMPILER=$CC \
-            -DCMAKE_CXX_COMPILER=$CXX \
-            -DCMAKE_PREFIX_PATH=$PREFIX \
-            .
-    fi
+        #rm -rf CMakeCache.txt CMakeFiles/
+        #cmake \
+        #    -DCMAKE_TOOLCHAIN_FILE=$pwd/Android.cmake \
+        #    -DCMAKE_SYSROOT=$SYSROOT \
+        #    -DCMAKE_C_COMPILER=$CC \
+        #    -DCMAKE_CXX_COMPILER=$CXX \
+        #    -DCMAKE_PREFIX_PATH=$PREFIX \
+        #    .
+        export PYTHON_CPPFLAGS="-I${SYSROOT}/usr/include/python2.7"
+        export PYTHON_LDFLAGS="-L${SYSROOT}/usr/lib -L${SYSROOT}/usr/lib/python2.7/config/"
+        export PYTHON_LIBS="-lpthread -ldl -lutil -lpython2.7"
+        export PYTHON_EXTRA_LDFLAGS="-L${SYSROOT}/usr/lib -L${SYSROOT}/usr/lib/python2.7/config/"
+        export PYTHON_EXTRA_LIBS="-ldl -lpython2.7"
+        export PYTHON_NOVERSIONCHECK=1
+        export PYTHON_SITE_PKG="${SYSROOT}/usr/lib/python2.7/dist-packages"
+        ./bootstrap
+        ./configure \
+            $VERBOSE_CONFIGURE \
+            --host=$HOST \
+            --prefix=$PREFIX \
+            --with-sysroot=$SYSROOT \
+            --enable-egl \
+            --disable-v4l2 \
+            SDL_PATH=$pwd/$libSDL2_PATH \
+            #
+    fi &&
     if [[ make =~ $cmds ]]
-    then $MAKE $VERBOSE_CMAKE_MAKE -j -l$JOBS
-    fi
+    #then $MAKE $VERBOSE_CMAKE_MAKE -j -l$JOBS
+    then $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
+    fi &&
     if [[ install =~ $cmds ]]
     then $MAKE install DESTDIR=$DESTDIR
     fi
@@ -100,12 +118,10 @@ gdk_pixbuf_build() {
         --disable-gio-sniffing \
         --disable-modules \
         --disable-relocations \
-        --without-libpng \
+        --with-libpng \
         --without-libjpeg \
         --without-libtiff \
         -C
-    # XXX maybe needs libpng etc detection, possibly .pc files
-    #     check this one at a time
     $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
     $MAKE install DESTDIR="$DESTDIR"
     popd
@@ -128,10 +144,10 @@ glib_build() {
         --host=$HOST \
         --prefix=$PREFIX \
         --with-sysroot=$SYSROOT \
+        --with-pcre=system \
         -C \
         --disable-shared
-    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS \
-        CFLAGS=-Dalloca # TODO this works around a possible bug in CrystaXs alloca.h
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
     $MAKE install DESTDIR="$DESTDIR"
     popd
 }
@@ -181,6 +197,22 @@ libffi_build() {
     popd
 }
 
+ffmpeg_build() {
+    local name=ffmpeg
+    local path=${name}_PATH
+    pushd "${!path}"
+    ./configure \
+        --host=$HOST \
+        --prefix=$PREFIX \
+        --with-sysroot=$SYSROOT \
+        --disable-debug \
+        --disable-programs \
+        --disable-shared -C &&
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS &&
+    $MAKE install DESTDIR="$DESTDIR"
+    popd
+}
+
 libpcre_build() {
     set -x
     local name=libpcre
@@ -196,14 +228,18 @@ libpcre_build() {
         --prefix=$PREFIX \
         --with-sysroot=$SYSROOT \
         --disable-shared -C
-    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
-    $MAKE install DESTDIR="$DESTDIR"
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS DESTDIR="$DESTDIR" \
+        install-libLTLIBRARIES \
+        install-pkgconfigDATA \
+        install-includeHEADERS \
+        install-nodist_includeHEADERS \
+        #
     popd
 }
 
-libpango_build() {
+pango_build() {
     set -x
-    local name=libpango
+    local name=pango
     local path=${name}_PATH
     pushd "${!path}"
     #./autogen.sh
@@ -215,9 +251,81 @@ libpango_build() {
         --host=$HOST \
         --prefix=$PREFIX \
         --with-sysroot=$SYSROOT \
-        --disable-shared -C
-    #./configure
-    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
+        --disable-shared -C &&
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS &&
+    $MAKE install DESTDIR="$DESTDIR"
+    popd
+}
+
+fontconfig_build() {
+    set -x
+    local name=fontconfig
+    local path=${name}_PATH
+    pushd "${!path}"
+    #./autogen.sh
+    #touch gtk-doc.make
+    #AUTOMAKE="${AUTOMAKE:-automake} --foreign" \
+    #autoreconf --install -Wnone $VERBOSE_AUTORECONF
+    ./configure \
+        $VERBOSE_CONFIGURE \
+        --host=$HOST \
+        --prefix=$PREFIX \
+        --with-sysroot=$SYSROOT \
+        --enable-libxml2 \
+        --disable-shared -C &&
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS &&
+    $MAKE install DESTDIR="$DESTDIR"
+    popd
+}
+
+png_build() {
+    set -xe
+    local name=png
+    local path=${name}_PATH
+    pushd "${!path}"
+    ./configure \
+        $VERBOSE_CONFIGURE \
+        --host=$HOST \
+        --prefix=$PREFIX \
+        --with-sysroot=$SYSROOT \
+        --disable-shared \
+        -C &&
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS &&
+    $MAKE install DESTDIR="$DESTDIR"
+    popd
+}
+
+rsvg_build() {
+    set -xe
+    local name=rsvg
+    local path=${name}_PATH
+    pushd "${!path}"
+    ./configure \
+        $VERBOSE_CONFIGURE \
+        --host=$HOST \
+        --prefix=$PREFIX \
+        --with-sysroot=$SYSROOT \
+        --disable-introspection \
+        --disable-shared \
+        -C &&
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS &&
+    $MAKE install DESTDIR="$DESTDIR"
+    popd
+}
+
+croco_build() {
+    set -xe
+    local name=croco
+    local path=${name}_PATH
+    pushd "${!path}"
+    ./configure \
+        $VERBOSE_CONFIGURE \
+        --host=$HOST \
+        --prefix=$PREFIX \
+        --with-sysroot=$SYSROOT \
+        --disable-shared \
+        -C &&
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS &&
     $MAKE install DESTDIR="$DESTDIR"
     popd
 }
@@ -239,19 +347,19 @@ cairo_build() {
         --with-sysroot=$SYSROOT \
         --disable-shared \
         --enable-glesv2 \
-        --disable-png \
+        --enable-png \
         --disable-pdf \
         --disable-svg \
         --disable-ps \
         --disable-script \
-        -C
+        -C &&
     # options which might be okay or not:
     # not ok script     (weird link to glib error)
     #     ok ps
-    # not ok png        (needs libpng.pc)
+    #     ok png        (dependency)
     # 
-    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
-    #$MAKE install DESTDIR="$DESTDIR"
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS &&
+    $MAKE install DESTDIR="$DESTDIR"
     popd
 }
 
@@ -277,6 +385,51 @@ pixman_build() {
             -C
     # XXX cpu-features.h of crystax not like pixman on android thinks it is
     # thats why --disable-arm-* is done
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
+    $MAKE install DESTDIR="$DESTDIR"
+    popd
+}
+
+harfbuzz_build() {
+    set -x
+    local name=harfbuzz
+    local path=${name}_PATH
+    pushd "${!path}"
+    #autoreconf --install -Wnone $VERBOSE_AUTORECONF
+    ./configure \
+        $VERBOSE_CONFIGURE \
+        --host=$HOST \
+        --prefix=$PREFIX \
+        --with-sysroot=$SYSROOT \
+        --disable-shared \
+        --with-gobject \
+        --with-freetype \
+        -C
+    $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
+    $MAKE install DESTDIR="$DESTDIR"
+    popd
+}
+
+freetype_build() {
+    set -x
+    local name=freetype
+    local path=${name}_PATH
+    pushd "${!path}"
+    #autoreconf --install -Wnone $VERBOSE_AUTORECONF
+    # http://www.linuxfromscratch.org/blfs/view/7.5/general/freetype2.html
+    sed -i  -e "/AUX.*.gxvalid/s@^# @@" \
+            -e "/AUX.*.otvalid/s@^# @@" \
+            modules.cfg                        &&
+
+    sed -ri -e 's:.*(#.*SUBPIXEL.*) .*:\1:' \
+            include/config/ftoption.h          &&
+    ./configure \
+        $VERBOSE_CONFIGURE \
+        --host=$HOST \
+        --prefix=$PREFIX \
+        --with-sysroot=$SYSROOT \
+        --disable-shared \
+        -C
     $MAKE $VERBOSE_AUTOCONF_MAKE -j -l$JOBS
     $MAKE install DESTDIR="$DESTDIR"
     popd

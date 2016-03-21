@@ -4,7 +4,7 @@ PYTHON_VERSIONS="2.7 3.5"
 ICU_VERSIONS="56.1"
 BUILD="${BUILD:-linux-x86_64}"
 
-PLATFORM="${PLATFORM:-android-21}"
+PLATFORM="${PLATFORM:-android-15}"
 ABI="${ABI:-armeabi}"
 COMPILER="${COMPILER:-gnu-4.9}"
 HOST="arm-linux-androideabi"
@@ -14,7 +14,10 @@ TOOLCHAIN="${TOOLCHAIN:-${TOOLCHAIN_NAME}-4.9}"
 URL="https://www.crystax.net/download/crystax-ndk-$CRYSTAX_VERSION-$BUILD.tar.xz"
 TAR_NAME="`basename "$URL"`"
 CRYSTAX_NAME="crystax-ndk-$CRYSTAX_VERSION"
-SOURCES="./$CRYSTAX_NAME/sources"
+CRYSTAX_BASE_PATH="/mnt/hdd/Projekte/libavg-on-android"
+CRYSTAX_PATH="${CRYSTAX_BASE_PATH}/${CRYSTAX_NAME}"
+CRYSTAX_TAR_PATH="${CRYSTAX_BASE_PATH}/${TAR_NAME}"
+SOURCES="$CRYSTAX_PATH/sources"
 
 INSTALL_DIR="$PWD/toolchain-$PLATFORM-$ABI-$COMPILER"
 SYSROOT="$INSTALL_DIR/sysroot"
@@ -43,7 +46,7 @@ MAKE="${MAKE:-make}"
 NDK_BUILD="${NDK_BUILD:-ndk-build -j$JOBS}"
 WGET=${WGET:-wget}
 TAR=${TAR:-tar}
-CP=${CP:-ln -r}
+CP=${CP:-cp -rf}
 
 PATH=$SYSROOT/../bin:$PATH
 

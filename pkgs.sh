@@ -5,7 +5,8 @@
 #       http://www.linuxfromscratch.org/blfs/view/svn/index.html
 
 PKGS=("libavg" "libxml2" "libSDL2" "gettext" "libffi" "libpcre" "glib"
-pixman cairo libpango "gdk_pixbuf")
+pixman cairo pango "gdk_pixbuf" harfbuzz freetype fontconfig png ffmpeg
+rsvg croco)
 PKGS_PATH="modules"
 
 define_git() { # name url branch path
@@ -32,10 +33,10 @@ define_deb() { # name pkg path
         ${1}_PATH="$path"
 }
 
-libavg_GIT="git@github.com:payload/libavg.git"
-# libavg_GIT="https://github.com/libavg/libavg.git"
+#libavg_GIT="git@github.com:payload/libavg.git"
+libavg_GIT="https://github.com/libavg/libavg.git"
 libavg_PATH="$PKGS_PATH/libavg"
-libavg_GIT_CLONE="--depth 1 --branch features/cmake-android $libavg_GIT $libavg_PATH"
+libavg_GIT_CLONE="--branch master $libavg_GIT $libavg_PATH"
 libavg_CONFIGURE=()
 
 libxml2_GIT="git://git.gnome.org/libxml2"
@@ -59,11 +60,18 @@ define_tar libSDL2 "https://libsdl.org/release/SDL2-2.0.4.tar.gz"
 define_tar gettext "http://ftp.gnu.org/pub/gnu/gettext/gettext-0.18.1.1.tar.gz"
 define_tar libffi "ftp://sourceware.org/pub/libffi/libffi-3.2.1.tar.gz"
 define_tar libpcre "ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.38.tar.bz2"
-define_tar libpango "http://ftp.gnome.org/pub/gnome/sources/pango/1.38/pango-1.38.1.tar.xz"
+define_tar pango " http://ftp.gnome.org/pub/gnome/sources/pango/1.36/pango-1.36.2.tar.xz"
 define_tar cairo "http://cairographics.org/releases/cairo-1.14.6.tar.xz"
-define_tar pixman "http://cairographics.org/releases/pixman-0.34.0.tar.gz"
+define_tar pixman "http://cairographics.org/releases/pixman-0.30.2.tar.gz"
 define_tar glib "http://ftp.gnome.org/pub/gnome/sources/glib/2.46/glib-2.46.2.tar.xz"
 define_tar gdk_pixbuf "http://ftp.gnome.org/pub/gnome/sources/gdk-pixbuf/2.30/gdk-pixbuf-2.30.7.tar.xz"
+define_tar harfbuzz "http://www.freedesktop.org/software/harfbuzz/release/harfbuzz-1.0.3.tar.bz2"
+define_tar freetype "http://downloads.sourceforge.net/freetype/freetype-2.5.2.tar.bz2"
+define_tar fontconfig "http://www.freedesktop.org/software/fontconfig/release/fontconfig-2.11.0.tar.bz2"
+define_tar png "http://downloads.sourceforge.net/libpng/libpng-1.6.21.tar.xz"
+define_tar ffmpeg "http://ffmpeg.org/releases/ffmpeg-2.8.6.tar.xz"
+define_tar rsvg "http://ftp.gnome.org/pub/gnome/sources/librsvg/2.40/librsvg-2.40.7.tar.xz"
+define_tar croco "http://ftp.gnome.org/pub/gnome/sources/libcroco/0.6/libcroco-0.6.8.tar.xz"
 
 
 #glib_GIT="https://github.com/GNOME/glib.git"

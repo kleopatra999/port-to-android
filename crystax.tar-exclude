@@ -1,12 +1,8 @@
-android-?
-android-1?
-android-20
 arch-mips
 arch-x86
 arch-mips64
 arch-x86_64
 arch-arm64
-mips[!.][!h]*
 aarch*
 toolchains/x86*
 libs/x86_64

@@ -12,11 +12,12 @@ main() {
     local minimal_crystax="-Xcrystax.tar-exclude"
     minimal_crystax=
 
-    test -e "$TAR_NAME" ||
-        $RUN $WGET "$URL" -O "$TAR_NAME"
-    test -e "$CRYSTAX_NAME" ||
-        $RUN $TAR $minimal_crystax -x -a -f "$TAR_NAME" \
-            --checkpoint=1000 --totals
+    set -x
+    test -e "$CRYSTAX_TAR_PATH" ||
+        $RUN $WGET "$URL" -O "$CRYSTAX_TAR_PATH"
+    test -e "$CRYSTAX_PATH" ||
+        $RUN $TAR $minimal_crystax -x -a -f "$CRYSTAX_TAR_PATH" \
+            --checkpoint=1000 --totals -C "$CRYSTAX_BASE_PATH"
     test -e "$INSTALL_DIR" ||
         make_standalone_toolchain
     for v in $BOOST_VERSIONS
@@ -29,6 +30,7 @@ main() {
     do copy_icu $v
     done
     copy_stuff
+    set +x
     echo "toolchain exists in $INSTALL_DIR"
 }
 
@@ -46,7 +48,7 @@ make_standalone_toolchain() {
   # --package-dir=<path>     Place package file in <path> [/tmp/ndk-payload]
   # --install-dir=<path>     Don't create package, install files to <path> instead.
   # --platform=<name>        Specify target Android platform/API level. [android-3]
-  ./$CRYSTAX_NAME/build/tools/make-standalone-toolchain.sh \
+  $CRYSTAX_PATH/build/tools/make-standalone-toolchain.sh \
     --toolchain=$TOOLCHAIN \
     --install-dir=$INSTALL_DIR \
     --platform=$PLATFORM
@@ -54,28 +56,28 @@ make_standalone_toolchain() {
 
 copy_boost() {
     local version=$1
-    $CP -fs $SOURCES/boost/$version/include/* $SYSROOT$PREFIX/include
-    $CP -fs $SOURCES/boost/$version/libs/$ABI/$COMPILER/* $SYSROOT$PREFIX/lib
+    $CP $SOURCES/boost/$version/include/* $SYSROOT$PREFIX/include
+    $CP $SOURCES/boost/$version/libs/$ABI/$COMPILER/* $SYSROOT$PREFIX/lib
 }
 
 copy_python() {
     local version=$1
-    mkdir -p $SYSROOT$PREFIX/lib/python$version/
-    $CP -fs $SOURCES/python/$version/include/* $SYSROOT$PREFIX/include
-    $CP -fs $SOURCES/python/$version/libs/$ABI/*.so $SYSROOT$PREFIX/lib
-    $CP -fs \
-        $SOURCES/python/$version/libs/$ABI/{modules,site-packags,stdlib.zip} \
+    mkdir -p $SYSROOT$PREFIX/{include,lib}/python$version/
+    $CP $SOURCES/python/$version/include/python/* $SYSROOT$PREFIX/include/python$version/
+    $CP $SOURCES/python/$version/libs/$ABI/*.so $SYSROOT$PREFIX/lib
+    $CP \
+        $SOURCES/python/$version/libs/$ABI/{modules,site-packages,stdlib.zip} \
         $SYSROOT$PREFIX/lib/python$version/
 }
 
 copy_icu() {
     local version=$1
-    $CP -fs $SOURCES/icu/$version/include/* $SYSROOT$PREFIX/include
-    $CP -fs $SOURCES/icu/$version/libs/$ABI/* $SYSROOT$PREFIX/lib
+    $CP $SOURCES/icu/$version/include/* $SYSROOT$PREFIX/include
+    $CP $SOURCES/icu/$version/libs/$ABI/* $SYSROOT$PREFIX/lib
 }
 
 copy_stuff() {
-    ln -sf /bin/false $INSTALL_DIR/bin/freetype-config
+    ln -fs /bin/false $INSTALL_DIR/bin/freetype-config
 }
 
 main "${@:1}"
